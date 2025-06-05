@@ -1,7 +1,7 @@
 // Google Maps API 設定
 export const mapsConfig = {
-  apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-  libraries: ['places', 'geometry'] as const,
+  apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+  libraries: ["places", "geometry"] as const,
   defaultZoom: 15,
   defaultCenter: {
     latitude: 35.6762,
@@ -13,18 +13,18 @@ export const mapsConfig = {
 // 地図スタイル設定
 export const mapStyles = [
   {
-    elementType: 'geometry',
+    elementType: "geometry",
     stylers: [
       {
-        color: '#f5f5f5',
+        color: "#f5f5f5",
       },
     ],
   },
   {
-    elementType: 'labels.icon',
+    elementType: "labels.icon",
     stylers: [
       {
-        visibility: 'off',
+        visibility: "off",
       },
     ],
   },

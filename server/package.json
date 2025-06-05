@@ -11,7 +11,12 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
   },
-  "keywords": ["ai", "maps", "route-planning", "express"],
+  "keywords": [
+    "ai",
+    "maps",
+    "route-planning",
+    "express"
+  ],
   "author": "Kimamap Team",
   "license": "MIT",
   "dependencies": {
