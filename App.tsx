@@ -1,7 +1,9 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
 import MapTop from "./app/screens/map-top";
+import Serch from "./app/screens/serch";
 import { View, Text, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
 
@@ -18,6 +20,7 @@ const DummyScreen2: React.FC = () => (
 );
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
 const TAB_COLOR = "#F8D762";
 const ICONS = {
@@ -26,65 +29,83 @@ const ICONS = {
   Dummy2: "user",
 };
 
+const TabNavigator = () => (
+  <Tab.Navigator
+    screenOptions={({ route }) => ({
+      // MapのみheaderShown: false、他はtrue
+      headerShown: route.name !== "Map",
+      tabBarStyle: {
+        backgroundColor: TAB_COLOR,
+        borderTopWidth: 0,
+        height: 100,
+        paddingBottom: 4,
+      },
+      tabBarItemStyle: {
+        marginTop: 12,
+      },
+      tabBarShowLabel: false,
+      tabBarIcon: ({ focused }) => {
+        const iconName = ICONS[route.name as keyof typeof ICONS];
+        return (
+          <View
+            style={{
+              backgroundColor: focused ? "#222" : "#fff",
+              borderRadius: 36,
+              padding: 16,
+              minWidth: 52,
+              minHeight: 52,
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 4,
+            }}
+          >
+            <Icon
+              name={iconName}
+              size={20}
+              color={focused ? "#fff" : "#222"}
+              solid
+            />
+          </View>
+        );
+      },
+    })}
+  >
+    <Tab.Screen name="Map" component={MapTop} options={{ title: "マップ", headerShown: false }} />
+    <Tab.Screen
+      name="Dummy1"
+      component={DummyScreen1}
+      options={{
+        title: "保存済み",
+        headerShown: true,
+        headerStyle: { backgroundColor: TAB_COLOR },
+        headerTintColor: "#fff",
+      }}
+    />
+    <Tab.Screen
+      name="Dummy2"
+      component={DummyScreen2}
+      options={{
+        title: "マイページ",
+        headerShown: true,
+        headerStyle: { backgroundColor: TAB_COLOR },
+        headerTintColor: "#fff",
+      }}
+    />
+  </Tab.Navigator>
+);
+
 const App: React.FC = () => {
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerStyle: { backgroundColor: TAB_COLOR },
-          headerTintColor: "#fff",
-          tabBarStyle: {
-            backgroundColor: TAB_COLOR,
-            borderTopWidth: 0,
-            height: 100, // フッターの高さを拡大
-            paddingBottom: 4, // アイコンの下余白も追加
-          },
-          tabBarItemStyle: {
-            marginTop: 12,
-          },
-          tabBarShowLabel: false,
-          tabBarIcon: ({ focused }) => {
-            const iconName = ICONS[route.name as keyof typeof ICONS];
-            return (
-              <View
-                style={{
-                  backgroundColor: focused ? "#222" : "#fff",
-                  borderRadius: 36, // 丸くて大きめに
-                  padding: 16, // 内側スペース広く
-                  minWidth: 52, // 幅の最低値
-                  minHeight: 52, // 高さの最低値（丸く見える）
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginTop: 4,
-                }}
-              >
-                <Icon
-                  name={iconName}
-                  size={20} // アイコンを小さく
-                  color={focused ? "#fff" : "#222"}
-                  solid
-                />
-              </View>
-            );
-          },
-        })}
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          ...TransitionPresets.SlideFromRightIOS, // スムーズな遷移アニメーション
+        }}
       >
-        <Tab.Screen
-          name="Map"
-          component={MapTop}
-          options={{ title: "マップ" }}
-        />
-        <Tab.Screen
-          name="Dummy1"
-          component={DummyScreen1}
-          options={{ title: "保存済み" }}
-        />
-        <Tab.Screen
-          name="Dummy2"
-          component={DummyScreen2}
-          options={{ title: "マイページ" }}
-        />
-      </Tab.Navigator>
+        <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="Serch" component={Serch} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 };
