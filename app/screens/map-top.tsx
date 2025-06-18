@@ -1,5 +1,11 @@
 import React from "react";
-import { View, StyleSheet, TouchableOpacity, Text, Platform } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  Platform,
+} from "react-native";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
