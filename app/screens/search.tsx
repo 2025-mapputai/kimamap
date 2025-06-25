@@ -6,6 +6,8 @@ import { useFonts } from 'expo-font';
 export default function App() {
   const [fontsLoaded] = useFonts({
     ZenMaruGothic: require('../../assets/fonts/ZenMaruGothic-Regular.ttf'),
+    ZenMaruGothicBold: require('../../assets/fonts/ZenMaruGothic-Bold.ttf'),
+    ZenMaruGothicMedium: require('../../assets/fonts/ZenMaruGothic-Medium.ttf'),
   });
 
   const [input, setInput] = useState('');
@@ -123,7 +125,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 10,
     marginBottom: 5,
-    fontFamily: 'ZenMaruGothic',
+    fontFamily: 'ZenMaruGothicMedium',
   },
   input: {  // 入力フィールドのスタイル
     backgroundColor: '#FFE278',
@@ -144,7 +146,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#FFE278',
     paddingBottom: 5,
     textAlign: 'left',
-    fontFamily: 'ZenMaruGothic',
+    fontFamily: 'ZenMaruGothicMedium',
   },
   historyItemWrapper: {
     alignItems: 'center',
@@ -172,7 +174,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#FFE278',
     paddingBottom: 5,
     textAlign: 'center',
-    fontFamily: 'ZenMaruGothic',
+    fontFamily: 'ZenMaruGothicMedium',
   },
   pickerWrapper: {  // 交通手段のピッカーのスタイル
     borderRadius: 12,
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#FFE278',
     paddingBottom: 5,
     textAlign: 'center',
-    fontFamily: 'ZenMaruGothic',
+    fontFamily: 'ZenMaruGothicMedium',
   },
   timePickerContainer: {  // 時間選択のピッカーのスタイル
     flexDirection: 'row',
