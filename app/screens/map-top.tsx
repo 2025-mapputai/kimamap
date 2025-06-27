@@ -20,7 +20,7 @@ const MapHeader: React.FC = () => {
       <TouchableOpacity
         style={styles.searchBar}
         activeOpacity={0.8}
-        onPress={() => navigation.navigate("Serch")}
+        onPress={() => navigation.navigate("Search")}
       >
         <Text style={styles.searchText}>スポット・エリア・気分で検索</Text>
       </TouchableOpacity>

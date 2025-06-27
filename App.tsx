@@ -3,9 +3,22 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
 import MapTop from "./app/screens/map-top";
-import Serch from "./app/screens/serch";
+import Search from "./app/screens/search";
 import { View, Text, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
+
+export type MainTabParamList = {
+  Map: undefined;
+  Dummy1: undefined;
+  Dummy2: undefined;
+};
+
+export type RootStackParamList = {
+  Main: {
+    screen: keyof MainTabParamList;
+  };
+  Search: undefined;
+};
 
 // 仮の2つの画面コンポーネント
 const DummyScreen1: React.FC = () => (
@@ -104,7 +117,7 @@ const App: React.FC = () => {
         }}
       >
         <Stack.Screen name="Main" component={TabNavigator} />
-        <Stack.Screen name="Serch" component={Serch} />
+        <Stack.Screen name="Search" component={Search} />
       </Stack.Navigator>
     </NavigationContainer>
   );
