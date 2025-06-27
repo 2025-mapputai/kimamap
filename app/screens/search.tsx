@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useFonts } from 'expo-font';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../../App';
+export default function Search() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-export default function App() {
   const [fontsLoaded] = useFonts({
     ZenMaruGothic: require('../../assets/fonts/ZenMaruGothic-Regular.ttf'),
     ZenMaruGothicBold: require('../../assets/fonts/ZenMaruGothic-Bold.ttf'),
@@ -29,7 +32,10 @@ export default function App() {
 
   return (
     <ScrollView style={styles.container} scrollEnabled={false}>
-      <TouchableOpacity style={styles.closeButton}>
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => navigation.navigate("Main", { screen: "Map" })}
+      >
         <Text style={styles.closeText}>×</Text>
       </TouchableOpacity>
 
@@ -70,7 +76,6 @@ export default function App() {
       </View>
 
       <Text style={styles.timeTitle}>何分空いてますか？</Text>
-
       <View style={styles.timePickerContainer}>
         <View style={styles.singlePickerWrapper}>
           <Picker
@@ -112,7 +117,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
   },
-  closeButton: {  // 閉じるボタンのスタイル
+  closeButton: {
     marginTop: 20,
     alignSelf: 'flex-start',
   },
@@ -120,14 +125,14 @@ const styles = StyleSheet.create({
     fontSize: 50,
     color: '#000',
   },
-  label: {  // 要望を入力のラベルスタイル
+  label: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
     marginBottom: 5,
     fontFamily: 'ZenMaruGothicMedium',
   },
-  input: {  // 入力フィールドのスタイル
+  input: {
     backgroundColor: '#FFE278',
     padding: 10,
     borderRadius: 25,
@@ -137,7 +142,7 @@ const styles = StyleSheet.create({
     borderColor: '#C0A647',
     fontFamily: 'ZenMaruGothic',
   },
-  historyTitle: {  // 履歴と線のスタイル
+  historyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 30,
@@ -151,7 +156,7 @@ const styles = StyleSheet.create({
   historyItemWrapper: {
     alignItems: 'center',
   },
-  historyItem: {  // 履歴アイテムのスタイル
+  historyItem: {
     fontSize: 16,
     paddingVertical: 6,
     borderBottomWidth: 1,
@@ -160,12 +165,12 @@ const styles = StyleSheet.create({
     width: '80%',
     fontFamily: 'ZenMaruGothic',
   },
-  emptyHistoryItem: {  // 空枠の履歴アイテムのスタイル
+  emptyHistoryItem: {
     color: 'transparent',
     borderBottomWidth: 1,
     borderBottomColor: '#FFE278',
   },
-  sectionTitle: {  // 交通手段の文字と線のスタイル
+  sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 30,
@@ -176,7 +181,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'ZenMaruGothicMedium',
   },
-  pickerWrapper: {  // 交通手段のピッカーのスタイル
+  pickerWrapper: {
     borderRadius: 12,
     marginBottom: 20,
     overflow: 'hidden',
@@ -185,11 +190,11 @@ const styles = StyleSheet.create({
     width: '60%',
     marginTop: -10,
   },
-  picker: {  // ピッカーのスタイル
+  picker: {
     height: 100,
     color: '#000',
   },
-  timeTitle: {  // 時間選択の文字と線のスタイル
+  timeTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
@@ -200,29 +205,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'ZenMaruGothicMedium',
   },
-  timePickerContainer: {  // 時間選択のピッカーのスタイル
+  timePickerContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 20,
     marginBottom: 20,
     marginTop: -10,
   },
-  singlePickerWrapper: {  // 単一のピッカーのスタイル
+  singlePickerWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  timePicker: {  // 時間選択のピッカーのスタイル
+  timePicker: {
     height: 150,
     width: 90,
     color: '#000',
   },
-  timeLabel: {  // 時間と分のラベルのスタイル
+  timeLabel: {
     fontSize: 16,
     marginHorizontal: 5,
     marginTop: '50%',
     fontFamily: 'ZenMaruGothic',
   },
-  searchButton: {  // 検索ボタンのスタイル
+  searchButton: {
     backgroundColor: '#FFE278',
     paddingVertical: 12,
     borderRadius: 6,
@@ -232,7 +237,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 50,
   },
-  searchText: {  // 検索ボタンのテキストスタイル
+  searchText: {
     fontSize: 18,
     fontWeight: 'bold',
     fontFamily: 'ZenMaruGothic',
