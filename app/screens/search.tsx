@@ -4,6 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useFonts } from 'expo-font';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../App';
+
 export default function Search() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
@@ -13,46 +14,53 @@ export default function Search() {
     ZenMaruGothicMedium: require('../../assets/fonts/ZenMaruGothic-Medium.ttf'),
   });
 
-  const [input, setInput] = useState('');
-  const [history] = useState([
+  // ✅ 検索バーに表示するテキスト
+  const [searchText, setSearchText] = useState('');
+
+  // ✅ 将来AIおすすめに置き換えやすいよう命名
+  const [recommendations] = useState([
     'わくわくしたい',
     '美味しいもの食べたい気分',
     'オシャレなカフェに行きたい',
   ]);
+
   const [transport, setTransport] = useState('');
   const [hours, setHours] = useState('0');
   const [minutes, setMinutes] = useState('0');
 
-  const historyMax = 3;
-  const emptyCount = historyMax - history.length;
+  const recMax = 3;
+  const emptyCount = recMax - recommendations.length;
 
-  if (!fontsLoaded) {
-    return null; // フォント読み込み中は何も表示しない
-  }
+  if (!fontsLoaded) return null;
 
   return (
     <ScrollView style={styles.container} scrollEnabled={false}>
       <TouchableOpacity
         style={styles.closeButton}
-        onPress={() => navigation.navigate("Main", { screen: "Map" })}
+        onPress={() => navigation.navigate('Main', { screen: 'Map' })}
       >
         <Text style={styles.closeText}>×</Text>
       </TouchableOpacity>
 
-      <Text style={styles.label}>要望を入力</Text>
+      {/* 検索バー */}
       <TextInput
-        style={styles.input}
-        placeholder="例：カフェに行きたい"
-        placeholderTextColor="#a9a9a9"
-        value={input}
-        onChangeText={setInput}
+        style={styles.searchInput}
+        placeholder="要望を入力"
+        placeholderTextColor="#999"
+        value={searchText}                  // 🔑 検索バーの値をステートと同期
+        onChangeText={setSearchText}
       />
 
-      <Text style={styles.historyTitle}>検索履歴</Text>
-      {history.map((item, index) => (
-        <View key={index} style={styles.historyItemWrapper}>
+      {/* AIおすすめ（旧:検索履歴） */}
+      <Text style={styles.historyTitle}>AIのおすすめ</Text>
+      {recommendations.map((item, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.historyItemWrapper}
+          onPress={() => setSearchText(item)}  // 🔑 タップしたら検索バーへ反映
+        >
           <Text style={styles.historyItem}>{item}</Text>
-        </View>
+        </TouchableOpacity>
       ))}
       {Array.from({ length: emptyCount }).map((_, index) => (
         <View key={`empty-${index}`} style={styles.historyItemWrapper}>
@@ -60,6 +68,7 @@ export default function Search() {
         </View>
       ))}
 
+      {/* 以下、交通手段や時間選択はそのまま */}
       <Text style={styles.sectionTitle}>どんな手段を使いますか？</Text>
       <View style={styles.pickerWrapper}>
         <Picker
@@ -125,7 +134,21 @@ const styles = StyleSheet.create({
     fontSize: 50,
     color: '#000',
   },
-  label: {
+  searchInput: {
+    backgroundColor: '#FFE278',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 25,
+    fontSize: 16,
+    color: '#000',
+    borderWidth: 1.5,
+    borderColor: '#C0A647',
+    fontFamily: 'ZenMaruGothic',
+    marginTop: 10,
+    alignSelf: 'center',
+    width: '90%',
+  },
+  /*label: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
@@ -141,7 +164,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#C0A647',
     fontFamily: 'ZenMaruGothic',
-  },
+  },*/
   historyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
