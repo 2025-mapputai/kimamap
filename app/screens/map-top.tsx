@@ -9,6 +9,7 @@ import {
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import WeatherWidget from "../components/weather/WeatherWidget";
 
 const TAB_COLOR = "#F8D762";
 
@@ -33,6 +34,7 @@ const MapTop: React.FC = () => {
   return (
     <View style={styles.container}>
       <MapHeader />
+      <WeatherWidget />
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
