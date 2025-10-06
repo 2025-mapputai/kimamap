@@ -12,13 +12,12 @@
   2. ラベル用アイコンを `visibility: "off"` で非表示にする。
 - Expo / `react-native-maps` では `customMapStyle` プロップで適用できるが、適用しなければデフォルトの Google Map 表示が保持される。
 
-## 方針
+## 方針と対応状況
 - MVP ではデフォルトの Google Map 表示を利用する。
-- 未使用の `mapStyles` 定義は削除し、必要になった時点で改めて導入する。
-  - 削除対象: `config/maps.ts` 内の `mapStyles` 定義と `mapStyles` エクスポート。
-  - 依存箇所は現時点で存在しないため副作用はない。
+- 未使用だった `mapStyles` 定義を削除済み（`config/maps.ts` から該当配列・エクスポートを除去）。
+  - 依存箇所が存在しないことを `rg "mapStyles"` で確認済み。
+  - 将来スタイルが必要になった場合は再導入する。
 
 ## 今後のメモ
 - 将来的にブランドカラーやダークモード対応を行う場合は、Google Map スタイルエディタで JSON を生成し、`customMapStyle` に渡す形で再導入する。
 - テーマ切り替えを想定するなら `mapStyles.light` / `mapStyles.dark` などの構造を設計し、`MapTop` 側で条件によって差し替える。
-

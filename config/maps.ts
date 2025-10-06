@@ -10,25 +10,4 @@ export const mapsConfig = {
   searchRadius: 5000, // 5km
 };
 
-// 地図スタイル設定
-export const mapStyles = [
-  {
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#f5f5f5",
-      },
-    ],
-  },
-  {
-    elementType: "labels.icon",
-    stylers: [
-      {
-        visibility: "off",
-      },
-    ],
-  },
-  // その他のスタイル設定...
-];
-
 export type MapsConfig = typeof mapsConfig;
