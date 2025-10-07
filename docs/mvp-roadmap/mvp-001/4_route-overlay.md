@@ -17,17 +17,14 @@ export type RouteSpot = {
   longitude: number;     // 経度
 };
 ```
-- API 側（`MVP-003`）のレスポンスも `name`, `description`, `stayMinutes`, `lat`, `lng` などを返す想定のため、両者の契約を合わせやすい。
-- React では `key` に `id` を指定するので、安定した ID を含めておくとマーカーやリストの再描画が安全になる。
 
 ### 2. 座標とポリラインの型
 ```ts
 export type LatLng = { latitude: number; longitude: number };
 export type RoutePolyline = LatLng[];
 ```
-- `react-native-maps` の `Marker` や `Polyline` は `{ latitude, longitude }` 形式の座標を要求する。
-- 定義を一箇所にまとめることで、座標に関わるロジック（距離計算や中央位置の算出など）を共通化しやすい。
-- 将来的に GeoJSON など別形式を扱いたくなった場合も、ここで型を差し替えれば影響範囲を抑えられる。
+- `react-native-maps` の `Marker` や `Polyline` が受け取る形式に合わせて定義する。
+- 共通型としてまとめることで、距離計算や座標ロジックを再利用しやすくなる。
 
 ### 3. ルート全体の型 `RoutePlan`
 ```ts
@@ -40,9 +37,8 @@ export type RoutePlan = {
   polyline: RoutePolyline;    // マーカーを結ぶ線用の座標群
 };
 ```
-- サーバー `POST /api/plans` のレスポンス仕様（`MVP-003`）を前提に構成。
-- 将来の「複数候補」表示を見据え、単数形の `RoutePlan` と複数形の `RoutePlan[]` を扱えるようにする。
-- `summary` や `totalDuration` は下部カード UI での表示を想定。
+- サーバー `POST /api/plans` のレスポンス仕様（`MVP-003`）を前提。
+- 複数候補を扱うために配列構造を想定。
 
 ### 4. マップ上で扱う状態 `MapRouteOverlayState`
 ```ts
@@ -53,8 +49,6 @@ export type MapRouteOverlayState = {
 };
 ```
 - マップ側で「どのルートを表示するか」「どのスポットが選択中か」を明示的に管理する。
-- ルートが3件程度返る場合でも、`plans` に配列として保持し、`activePlanId` を切り替えるだけで地図描画を更新できる。
-- スポット詳細カードを開いたときに `focusedSpotId` をセットすれば、マーカーのハイライトやスクロール位置と連携できる。
 
 ## 状態構造のイメージ
 ```
@@ -69,6 +63,12 @@ MapRouteOverlayState
 ```
 - 階層構造が明確になることで、`MapTop` は `activePlanId` から現在描画すべき `RoutePlan` を取得し、`RouteSpot` や `RoutePolyline` をそのまま `Marker` / `Polyline` に渡せる。
 - ルート候補が空の場合は `plans.length === 0` を見れば判定できる。
+
+## 実装状況
+- `app/types/routes.ts` に `LatLng`, `RouteSpot`, `RoutePolyline`, `RoutePlan`, `MapRouteOverlayState` を定義済み。今後ルート関連モジュールで共通利用できる。
+- `MapTop` では `routeOverlay` state を追加し、`__DEV__` 環境でダミー `RoutePlan`（皇居周辺）を流し込んでポリライン・マーカー描画を確認できる。
+- `routeOverlay.activePlanId` から `activePlan` を算出し、`Polyline` と `Marker` で試験描画を行う構成。
+- 本番では `MVP-004` から渡される実データを `setRouteOverlay` に流し込むだけでマップ描画が行える。
 
 ## ダミーデータ例
 ```ts
@@ -101,10 +101,8 @@ const sampleRoute: RoutePlan = {
   ],
 };
 ```
-- このダミーデータを使えば、`RoutePlan` 型が期待通りに定義されているか、`Marker` と `Polyline` で描画できるかを事前に確認できる。
 
 ## 今後の連携
-- `MVP-004` では検索結果から `RoutePlan[]` を生成して `MapTop` に渡す想定。ここで定義した型を `@/types/routes.ts` などに切り出して共有する。
-- `MVP-003` の API 設計と差異が出た場合は、双方の仕様を揃えるよう相談する。
-- 将来的に複数ルート比較UI（カルーセルなど）を実装する場合でも、`MapRouteOverlayState` の `plans` と `activePlanId` を切り替えるだけで対応できる。
-
+- `MVP-004` では検索結果から `RoutePlan[]` を生成して `MapTop` に渡す想定。ここで定義した型を `@/types/routes.ts` として共有する。
+- `MVP-003` の API 設計と差異があれば調整する。
+- 複数ルート比較UIなどの拡張も、`plans` と `activePlanId` を切り替えるだけで対応可能。

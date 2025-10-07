@@ -14,21 +14,59 @@ import {
   AppState,
   Linking,
 } from "react-native";
-import MapView, { PROVIDER_GOOGLE, Region } from "react-native-maps";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import WeatherWidget from "../components/weather/WeatherWidget";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import { mapsConfig } from "../../config/maps";
+import type {
+  LatLng,
+  MapRouteOverlayState,
+  RoutePlan,
+} from "../types/routes";
 
 const TAB_COLOR = "#F8D762";
 
 type LocationStatus = "loading" | "granted" | "denied" | "fallback";
 
-type LatLng = {
-  latitude: number;
-  longitude: number;
+const SAMPLE_ROUTE_PLAN: RoutePlan = {
+  id: "sample-plan",
+  title: "皇居おさんぽルート",
+  summary: "皇居と周辺スポットを巡る散歩コース",
+  totalDuration: 120,
+  spots: [
+    {
+      id: "spot-kokyo",
+      name: "皇居外苑",
+      description: "芝生が広がる皇居外苑でのんびり",
+      stayMinutes: 45,
+      latitude: 35.685175,
+      longitude: 139.7528,
+    },
+    {
+      id: "spot-tokyostation",
+      name: "東京駅丸の内駅舎",
+      description: "赤レンガ駅舎を眺めながら写真撮影",
+      stayMinutes: 30,
+      latitude: 35.681236,
+      longitude: 139.767125,
+    },
+    {
+      id: "spot-kitte",
+      name: "KITTE屋上庭園",
+      description: "屋上庭園から東京駅の眺望を楽しむ",
+      stayMinutes: 30,
+      latitude: 35.680851,
+      longitude: 139.765397,
+    },
+  ],
+  polyline: [
+    { latitude: 35.685175, longitude: 139.7528 },
+    { latitude: 35.681236, longitude: 139.767125 },
+    { latitude: 35.680851, longitude: 139.765397 },
+  ],
 };
 
 // 検索バー風ヘッダー
@@ -60,6 +98,11 @@ const MapTop: React.FC = () => {
   const [lastError, setLastError] = useState<string | null>(null);
   const [isFollowingUser, setIsFollowingUser] = useState<boolean>(true);
   const [showRecenterButton, setShowRecenterButton] = useState<boolean>(false);
+  const [routeOverlay, setRouteOverlay] = useState<MapRouteOverlayState>({
+    plans: [],
+    activePlanId: null,
+    focusedSpotId: null,
+  });
   const lastAutoCenteredRef = useRef<LatLng | null>(null);
   const ignoreNextRegionChangeRef = useRef<boolean>(false);
   const mapRef = useRef<MapView | null>(null);
@@ -208,6 +251,16 @@ const MapTop: React.FC = () => {
   }, [checkLocation, stopWatchingPosition]);
 
   useEffect(() => {
+    if (__DEV__) {
+      setRouteOverlay({
+        plans: [SAMPLE_ROUTE_PLAN],
+        activePlanId: SAMPLE_ROUTE_PLAN.id,
+        focusedSpotId: null,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
         checkLocation();
@@ -236,6 +289,12 @@ const MapTop: React.FC = () => {
 
   const headerPaddingTop = insets.top + (Platform.OS === "ios" ? 16 : 12);
   const bannerTopOffset = headerPaddingTop + 56;
+  const activePlan = useMemo(() => {
+    if (!routeOverlay.activePlanId) return null;
+    return (
+      routeOverlay.plans.find((plan) => plan.id === routeOverlay.activePlanId) ?? null
+    );
+  }, [routeOverlay]);
 
   const handleRecenter = useCallback(() => {
     if (!currentLocation || !mapRef.current) {
@@ -358,7 +417,23 @@ const MapTop: React.FC = () => {
         ref={(ref) => {
           mapRef.current = ref;
         }}
-      />
+      >
+        {activePlan?.polyline?.length ? (
+          <Polyline
+            coordinates={activePlan.polyline}
+            strokeColor="#0A84FF"
+            strokeWidth={4}
+          />
+        ) : null}
+        {activePlan?.spots.map((spot) => (
+          <Marker
+            key={spot.id}
+            coordinate={{ latitude: spot.latitude, longitude: spot.longitude }}
+            title={spot.name}
+            description={spot.description}
+          />
+        ))}
+      </MapView>
       {showRecenterButton ? (
         <TouchableOpacity style={styles.recenterButton} onPress={handleRecenter}>
           <Text style={styles.recenterButtonText}>現在地</Text>
