@@ -4,8 +4,8 @@ export const mapsConfig = {
   libraries: ["places", "geometry"] as const,
   defaultZoom: 15,
   defaultCenter: {
-    latitude: 35.6762,
-    longitude: 139.6503, // 東京駅
+    latitude: 35.6812,
+    longitude: 139.7671, // 東京駅
   },
   searchRadius: 5000, // 5km
 };
