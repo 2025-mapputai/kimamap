@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Modal,
-  Alert,
-  ScrollView,
+  Linking,
+  FlatList,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import axios from "axios";
 import * as Location from "expo-location";
 
@@ -18,12 +19,22 @@ interface HourlyWeather {
   code: number;
 }
 
+type WeatherStatus = "loading" | "ready" | "denied" | "error";
+
+type WeatherData = {
+  currentTemp: number;
+  currentCode: number;
+  hourly: HourlyWeather[];
+};
+
+type WeatherErrorReason = "permission-denied" | "fetch-failed" | null;
+
 const WeatherWidget = ({ position = "left" }) => {
-  const [currentTemp, setCurrentTemp] = useState<number | null>(null);
-  const [currentCode, setCurrentCode] = useState<number | null>(null);
-  const [hourlyWeather, setHourlyWeather] = useState<HourlyWeather[]>([]);
+  const [status, setStatus] = useState<WeatherStatus>("loading");
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [errorReason, setErrorReason] = useState<WeatherErrorReason>(null);
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchWeatherData();
@@ -31,16 +42,23 @@ const WeatherWidget = ({ position = "left" }) => {
 
   const fetchWeatherData = async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("位置情報の許可が必要です");
+      setStatus("loading");
+      setErrorReason(null);
+
+      const { status: permissionStatus } =
+        await Location.requestForegroundPermissionsAsync();
+      if (permissionStatus !== Location.PermissionStatus.GRANTED) {
+        setStatus("denied");
+        setErrorReason("permission-denied");
+        setWeather(null);
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({});
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       const { latitude, longitude } = location.coords;
 
-      // Open-Meteoで現在の天気と1時間ごとの天気を取得
       const res = await axios.get(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weathercode&timezone=Asia%2FTokyo`
       );
@@ -63,18 +81,24 @@ const WeatherWidget = ({ position = "left" }) => {
         }
       }
 
-      // 現在の気温とコードを1時間目から取る
-      if (hourly.length > 0) {
-        setCurrentTemp(hourly[0].temp);
-        setCurrentCode(hourly[0].code);
+      if (!hourly.length) {
+        setWeather(null);
+        setStatus("error");
+        setErrorReason("fetch-failed");
+        return;
       }
 
-      setHourlyWeather(hourly);
+      setWeather({
+        currentTemp: hourly[0].temp,
+        currentCode: hourly[0].code,
+        hourly,
+      });
+      setStatus("ready");
     } catch (e) {
-      console.error("エラー:", e);
-      Alert.alert("天気データの取得に失敗しました");
-    } finally {
-      setLoading(false);
+      console.error("天気取得エラー:", e);
+      setWeather(null);
+      setStatus("error");
+      setErrorReason("fetch-failed");
     }
   };
 
@@ -93,30 +117,65 @@ const WeatherWidget = ({ position = "left" }) => {
     return map[code] || "cloud";
   };
 
-  if (loading || currentTemp === null || currentCode === null) {
-    return (
-      <TouchableOpacity
-        style={[
-          styles.weatherButton,
-          position === "right" && styles.rightPosition,
-        ]}
-      >
-        <Icon name="spinner" size={20} color="#fff" />
-      </TouchableOpacity>
-    );
-  }
+  const buttonPositionStyle = useMemo(() => {
+    const base = {
+      top: insets.top + 16,
+      left: position === "right" ? undefined : 16,
+      right: position === "right" ? 16 : undefined,
+    } as const;
+    return base;
+  }, [insets.top, position]);
+
+  const renderButtonContent = () => {
+    switch (status) {
+      case "loading":
+        return (
+          <View style={styles.inlineContent}>
+            <Icon name="spinner" size={18} color="#fff" />
+            <Text style={styles.inlineText}>取得中…</Text>
+          </View>
+        );
+      case "denied":
+        return (
+          <TouchableOpacity
+            style={styles.inlineContent}
+            onPress={() => Linking.openSettings()}
+          >
+            <Icon name="lock" size={18} color="#fff" />
+            <Text style={styles.inlineText}>権限を許可</Text>
+          </TouchableOpacity>
+        );
+      case "error":
+        return (
+          <TouchableOpacity
+            style={styles.inlineContent}
+            onPress={fetchWeatherData}
+          >
+            <Icon name="wifi" size={18} color="#fff" />
+            <Text style={styles.inlineText}>再読み込み</Text>
+          </TouchableOpacity>
+        );
+      case "ready":
+        if (!weather) return null;
+        return (
+          <View style={styles.inlineContent}>
+            <Icon name={getWeatherIcon(weather.currentCode)} size={20} color="#fff" />
+            <Text style={styles.tempText}>{Math.round(weather.currentTemp)}°</Text>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
       <TouchableOpacity
-        style={[
-          styles.weatherButton,
-          position === "right" && styles.rightPosition,
-        ]}
+        style={[styles.weatherButton, buttonPositionStyle]}
         onPress={() => setShowModal(true)}
+        disabled={status !== "ready"}
       >
-        <Icon name={getWeatherIcon(currentCode)} size={20} color="#fff" />
-        <Text style={styles.tempText}>{Math.round(currentTemp)}°</Text>
+        {renderButtonContent()}
       </TouchableOpacity>
 
       <Modal visible={showModal} animationType="slide" transparent>
@@ -129,8 +188,11 @@ const WeatherWidget = ({ position = "left" }) => {
               </TouchableOpacity>
             </View>
 
-            <ScrollView>
-              {hourlyWeather.map((item, idx) => {
+            <FlatList
+              data={weather?.hourly.slice(0, 24) ?? []}
+              keyExtractor={(item) => item.time}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => {
                 const dateObj = new Date(item.time);
                 const hour = item.time.slice(11, 16);
                 const day = dateObj.getDate();
@@ -140,10 +202,8 @@ const WeatherWidget = ({ position = "left" }) => {
                 ];
 
                 return (
-                  <View key={idx} style={styles.row}>
-                    <Text
-                      style={styles.time}
-                    >{`${hour} (${month}/${day} ${weekday})`}</Text>
+                  <View style={styles.row}>
+                    <Text style={styles.time}>{`${hour} (${month}/${day} ${weekday})`}</Text>
                     <Icon
                       name={getWeatherIcon(item.code)}
                       size={20}
@@ -152,8 +212,8 @@ const WeatherWidget = ({ position = "left" }) => {
                     <Text style={styles.temp}>{Math.round(item.temp)}°</Text>
                   </View>
                 );
-              })}
-            </ScrollView>
+              }}
+            />
           </View>
         </View>
       </Modal>
@@ -164,8 +224,6 @@ const WeatherWidget = ({ position = "left" }) => {
 const styles = StyleSheet.create({
   weatherButton: {
     position: "absolute",
-    top: 120,
-    left: 16,
     backgroundColor: "rgba(0,0,0,0.6)",
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -174,9 +232,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 1000,
   },
-  rightPosition: {
-    right: 16,
-    left: "auto",
+  inlineContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  inlineText: {
+    color: "#fff",
+    fontSize: 12,
   },
   tempText: {
     color: "#fff",
