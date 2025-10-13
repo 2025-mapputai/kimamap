@@ -414,6 +414,7 @@ const MapTop: React.FC = () => {
         style={styles.map}
         initialRegion={initialRegion}
         onRegionChangeComplete={handleRegionChangeComplete}
+        showsUserLocation={true}
         ref={(ref) => {
           mapRef.current = ref;
         }}

@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **config/supabase.ts**: Supabaseクライアント初期化とDatabase型エクスポート
 - **config/maps.ts**: Google Maps設定（デフォルト中心座標等）
 
-### 現状分析（2025年1月時点）
+### 現状分析（2025年10月時点）
 
 #### チーム構成・習熟度
 - **テックリード**: React Native経験あり、TypeScript半年、Expo/Supabase初心者レベル
