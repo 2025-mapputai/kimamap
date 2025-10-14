@@ -29,7 +29,15 @@ type WeatherData = {
 
 type WeatherErrorReason = "permission-denied" | "fetch-failed" | null;
 
-const WeatherWidget = ({ position = "left" }) => {
+interface WeatherWidgetProps {
+  position?: "left" | "right";
+  headerHeight: number;
+}
+
+const WeatherWidget: React.FC<WeatherWidgetProps> = ({
+  position = "left",
+  headerHeight,
+}) => {
   const [status, setStatus] = useState<WeatherStatus>("loading");
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [errorReason, setErrorReason] = useState<WeatherErrorReason>(null);
@@ -118,13 +126,15 @@ const WeatherWidget = ({ position = "left" }) => {
   };
 
   const buttonPositionStyle = useMemo(() => {
+    const WIDGET_MARGIN = 8; // ヘッダーとウィジェット間の間隔
+
     const base = {
-      top: insets.top + 16,
+      top: headerHeight + WIDGET_MARGIN,
       left: position === "right" ? undefined : 16,
       right: position === "right" ? 16 : undefined,
     } as const;
     return base;
-  }, [insets.top, position]);
+  }, [headerHeight, position]);
 
   const renderButtonContent = () => {
     switch (status) {

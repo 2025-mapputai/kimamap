@@ -288,6 +288,12 @@ const MapTop: React.FC = () => {
   );
 
   const headerPaddingTop = insets.top + (Platform.OS === "ios" ? 16 : 12);
+
+  // ヘッダー全体の高さを計算（WeatherWidget用）
+  const SEARCH_BAR_HEIGHT = 44; // styles.searchBarのpaddingVertical 12×2 + テキスト高さ
+  const HEADER_PADDING_BOTTOM = 8; // styles.headerBgのpaddingBottom
+  const headerTotalHeight = headerPaddingTop + SEARCH_BAR_HEIGHT + HEADER_PADDING_BOTTOM;
+
   const bannerTopOffset = headerPaddingTop + 56;
   const activePlan = useMemo(() => {
     if (!routeOverlay.activePlanId) return null;
@@ -408,7 +414,7 @@ const MapTop: React.FC = () => {
     <View style={styles.container}>
       <MapHeader topInset={headerPaddingTop} />
       {renderFallbackMessage()}
-      <WeatherWidget />
+      <WeatherWidget headerHeight={headerTotalHeight} />
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
