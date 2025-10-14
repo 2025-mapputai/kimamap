@@ -8,7 +8,8 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome5";
+// @ts-ignore
+import { Ionicons } from '@expo/vector-icons';
 import axios from "axios";
 import * as Location from "expo-location";
 
@@ -81,19 +82,57 @@ const WeatherWidget = ({ position = "left" }) => {
     }
   };
 
+  // より詳細な天気アイコンのマッピング（MaterialCommunityIcons用）
+  const getDetailedWeatherIcon = (code: number): string => {
+    const detailedMap: { [key: number]: string } = {
+      0: "weather-sunny",           // 晴れ
+      1: "weather-partly-cloudy",   // 晴れ時々曇り
+      2: "weather-cloudy",          // 曇り
+      3: "weather-cloudy",          // 曇り
+      51: "weather-rainy",          // 雨
+      61: "weather-rainy",          // 雨
+      80: "weather-pouring",        // にわか雨
+    };
+    return detailedMap[code] || "weather-cloudy";
+  };
+
   const getWeatherIcon = (code: number): string => {
     const map: { [key: number]: string } = {
-      0: "sun",
-      1: "cloud",
-      2: "cloud",
-      3: "cloud",
-      45: "smog",
-      48: "smog",
-      51: "cloud-rain",
-      61: "cloud-rain",
-      80: "cloud-rain",
+      0: "sunny",       // 晴れ
+      1: "partly-sunny", // 晴れ時々曇り
+      2: "cloudy",      // 曇り
+      3: "cloudy",      // 曇り
+      51: "rainy",      // 雨
+      61: "rainy",      // 雨
+      80: "thunderstorm", // にわか雨
     };
-    return map[code] || "cloud";
+    return map[code] || "cloudy";
+  };
+
+  const getWeatherIconColor = (code: number): string => {
+    const colorMap: { [key: number]: string } = {
+      0: "#FFA500",     // 晴れ - オレンジ
+      1: "#FFD700",     // 晴れ時々曇り - ゴールド
+      2: "#808080",     // 曇り - グレー
+      3: "#808080",     // 曇り - グレー
+      51: "#4169E1",    // 雨 - ロイヤルブルー
+      61: "#4169E1",    // 雨 - ロイヤルブルー
+      80: "#87CEEB",    // にわか雨 - スカイブルー（薄い水色）
+    };
+    return colorMap[code] || "#808080";
+  };
+
+  const getWeatherDescription = (code: number): string => {
+    const descMap: { [key: number]: string } = {
+      0: "晴れ ☀️",
+      1: "晴れ時々曇り 🌤️",
+      2: "曇り ☁️",
+      3: "曇り ☁️",
+      51: "雨 🌧️",
+      61: "雨 🌧️",
+      80: "にわか雨 🌦️",
+    };
+    return descMap[code] || "曇り ☁️";
   };
 
   if (loading || currentTemp === null || currentCode === null) {
@@ -104,7 +143,7 @@ const WeatherWidget = ({ position = "left" }) => {
           position === "right" && styles.rightPosition,
         ]}
       >
-        <Icon name="spinner" size={20} color="#fff" />
+        <Ionicons name="refresh" size={20} color="#fff" />
       </TouchableOpacity>
     );
   }
@@ -118,7 +157,11 @@ const WeatherWidget = ({ position = "left" }) => {
         ]}
         onPress={() => setShowModal(true)}
       >
-        <Icon name={getWeatherIcon(currentCode)} size={20} color="#fff" />
+        <Ionicons 
+          name={getWeatherIcon(currentCode) as any} 
+          size={20} 
+          color={getWeatherIconColor(currentCode)} 
+        />
         <Text style={styles.tempText}>{Math.round(currentTemp)}°</Text>
       </TouchableOpacity>
 
@@ -128,7 +171,7 @@ const WeatherWidget = ({ position = "left" }) => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>1時間ごとの天気</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
-                <Icon name="times" size={24} color="#333" />
+                <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
 
@@ -147,10 +190,10 @@ const WeatherWidget = ({ position = "left" }) => {
                     <Text
                       style={styles.time}
                     >{`${hour} (${month}/${day} ${weekday})`}</Text>
-                    <Icon
-                      name={getWeatherIcon(item.code)}
+                    <Ionicons
+                      name={getWeatherIcon(item.code) as any}
                       size={20}
-                      color="#333"
+                      color={getWeatherIconColor(item.code)}
                     />
                     <Text style={styles.temp}>{Math.round(item.temp)}°</Text>
                   </View>

@@ -13,12 +13,14 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "bundleIdentifier": "com.mapputai.kimamapp",
       "supportsTablet": true,
       "config": {
         "googleMapsApiKey": "AIzaSyAEQG5kxFXR_0tlJlytnCXGleHe8bhhxxA"
       }
     },
     "android": {
+      "applicationId": "com.mapputai.kimamapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
