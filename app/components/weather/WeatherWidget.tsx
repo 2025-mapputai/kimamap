@@ -32,13 +32,10 @@ const WeatherWidget = ({ position = "left" }) => {
 
   const fetchWeatherData = async () => {
     try {
-      const { status } = await Location.getForegroundPermissionsAsync();
+      const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-        if (newStatus !== "granted") {
-          Alert.alert("位置情報の許可が必要です");
-          return;
-        }
+        Alert.alert("位置情報の許可が必要です");
+        return;
       }
 
       const location = await Location.getCurrentPositionAsync({});
@@ -268,4 +265,3 @@ const styles = StyleSheet.create({
 });
 
 export default WeatherWidget;
-  
