@@ -12,7 +12,6 @@ import {
   Text,
   Platform,
   AppState,
-  Linking,
 } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
@@ -29,6 +28,8 @@ import type {
 import type { LocationStatus } from "../types/location";
 import { TAB_COLOR } from "../constants/colors";
 import { SAMPLE_ROUTE_PLAN } from "../data/sampleRoutes";
+import { LocationBanner } from "../components/map/LocationBanner";
+import { RecenterButton } from "../components/map/RecenterButton";
 
 // 検索バー風ヘッダー
 type MapHeaderProps = {
@@ -321,60 +322,15 @@ const MapTop: React.FC = () => {
     }
   }, [locationStatus]);
 
-  const renderFallbackMessage = () => {
-    if (locationStatus === "granted") return null;
-
-    let message = "現在地を取得しています";
-    let actionLabel: string | null = null;
-    let action: (() => void) | null = null;
-
-    if (locationStatus === "denied") {
-      message = "位置情報の許可が必要です";
-      actionLabel = "設定を開く";
-      action = () => Linking.openSettings();
-    } else if (locationStatus === "fallback") {
-      switch (fallbackReason) {
-        case "services-disabled":
-          message = "位置情報サービスがオフです";
-          actionLabel = "設定を開く";
-          action = () => Linking.openSettings();
-          break;
-        case "permission-blocked":
-          message = "位置情報が端末設定でブロックされています";
-          actionLabel = "設定を開く";
-          action = () => Linking.openSettings();
-          break;
-        case "position-error":
-        case "position-unavailable":
-          message = "現在地を取得できませんでした";
-          actionLabel = "再試行";
-          action = () => checkLocation();
-          break;
-        default:
-          message = "現在地情報が利用できません";
-          actionLabel = "再試行";
-          action = () => checkLocation();
-      }
-    } else if (locationStatus === "loading") {
-      message = "現在地を確認しています";
-    }
-
-    return (
-      <View style={[styles.bannerContainer, { top: bannerTopOffset }]}>
-        <Text style={styles.bannerText}>{message}</Text>
-        {action && actionLabel ? (
-          <TouchableOpacity style={styles.bannerButton} onPress={action}>
-            <Text style={styles.bannerButtonText}>{actionLabel}</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <MapHeader topInset={headerPaddingTop} />
-      {renderFallbackMessage()}
+      <LocationBanner
+        locationStatus={locationStatus}
+        fallbackReason={fallbackReason}
+        topOffset={bannerTopOffset}
+        onRetry={checkLocation}
+      />
       <WeatherWidget headerHeight={headerTotalHeight} />
       <MapView
         provider={PROVIDER_GOOGLE}
@@ -402,11 +358,7 @@ const MapTop: React.FC = () => {
           />
         ))}
       </MapView>
-      {showRecenterButton ? (
-        <TouchableOpacity style={styles.recenterButton} onPress={handleRecenter}>
-          <Text style={styles.recenterButtonText}>現在地</Text>
-        </TouchableOpacity>
-      ) : null}
+      <RecenterButton visible={showRecenterButton} onPress={handleRecenter} />
     </View>
   );
 };
@@ -441,54 +393,6 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
-  },
-  bannerContainer: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    zIndex: 20,
-  },
-  bannerText: {
-    color: "#fff",
-    flex: 1,
-    marginRight: 12,
-    fontSize: 14,
-  },
-  bannerButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-  },
-  bannerButtonText: {
-    color: "#333",
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  recenterButton: {
-    position: "absolute",
-    right: 16,
-    bottom: 32,
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  },
-  recenterButtonText: {
-    fontWeight: "600",
-    color: "#333",
   },
 });
 
