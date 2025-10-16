@@ -4,31 +4,10 @@ export const mapsConfig = {
   libraries: ["places", "geometry"] as const,
   defaultZoom: 15,
   defaultCenter: {
-    latitude: 35.6762,
-    longitude: 139.6503, // 東京駅
+    latitude: 35.6812,
+    longitude: 139.7671, // 東京駅
   },
   searchRadius: 5000, // 5km
 };
-
-// 地図スタイル設定
-export const mapStyles = [
-  {
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#f5f5f5",
-      },
-    ],
-  },
-  {
-    elementType: "labels.icon",
-    stylers: [
-      {
-        visibility: "off",
-      },
-    ],
-  },
-  // その他のスタイル設定...
-];
 
 export type MapsConfig = typeof mapsConfig;
