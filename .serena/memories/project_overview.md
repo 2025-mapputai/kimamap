@@ -13,7 +13,7 @@
 ## 技術スタック
 
 ### フロントエンド
-- React Native 0.79.2 + Expo 53.0.9 + TypeScript
+- React Native 0.79.2 + Expo 54.0.10 + TypeScript
 - React Navigation v7（Bottom Tabs + Stack Navigator）
 - React Native Maps 1.20.1 + Google Maps API
 - Expo Location 18.1.5（位置情報）

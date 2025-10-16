@@ -223,7 +223,7 @@ npm run lint --prefix server  # バックエンド
 
 ### Expo関連
 - Expo管理ワークフロー使用のため、ネイティブコード変更時は`expo prebuild`が必要
-- Expo SDK 53使用（`newArchEnabled: true`）
+- Expo SDK 54使用（`newArchEnabled: true`）
 - 位置情報機能は実機でのテストが必要（シミュレータでは制限あり）
 
 ### 地図・位置情報
