@@ -30,6 +30,7 @@ import { TAB_COLOR } from "../constants/colors";
 import { SAMPLE_ROUTE_PLAN } from "../data/sampleRoutes";
 import { LocationBanner } from "../components/map/LocationBanner";
 import { RecenterButton } from "../components/map/RecenterButton";
+import { useMapCamera } from "../hooks/useMapCamera";
 
 // 検索バー風ヘッダー
 type MapHeaderProps = {
@@ -58,17 +59,12 @@ const MapTop: React.FC = () => {
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [isFollowingUser, setIsFollowingUser] = useState<boolean>(true);
-  const [showRecenterButton, setShowRecenterButton] = useState<boolean>(false);
   const [routeOverlay, setRouteOverlay] = useState<MapRouteOverlayState>({
     plans: [],
     activePlanId: null,
     focusedSpotId: null,
   });
-  const lastAutoCenteredRef = useRef<LatLng | null>(null);
-  const ignoreNextRegionChangeRef = useRef<boolean>(false);
   const mapRef = useRef<MapView | null>(null);
-  const isFollowingUserRef = useRef<boolean>(true);
 
   const isMountedRef = useRef(true);
   const isCheckingRef = useRef(false);
@@ -154,8 +150,6 @@ const MapTop: React.FC = () => {
       if (!servicesEnabled) {
         updateStatus("fallback", "services-disabled");
         applyLocation(null);
-        setIsFollowingUser(false);
-        setShowRecenterButton(false);
         stopWatchingPosition();
         return;
       }
@@ -177,16 +171,12 @@ const MapTop: React.FC = () => {
         }
         updateStatus("denied", "permission-denied");
         applyLocation(null);
-        setIsFollowingUser(false);
-        setShowRecenterButton(false);
         stopWatchingPosition();
         return;
       }
 
       updateStatus("fallback", "permission-blocked");
       applyLocation(null);
-      setIsFollowingUser(false);
-      setShowRecenterButton(false);
       stopWatchingPosition();
     } catch (error) {
       if (isMountedRef.current) {
@@ -194,13 +184,26 @@ const MapTop: React.FC = () => {
       }
       updateStatus("fallback", "unknown-error");
       applyLocation(null);
-      setIsFollowingUser(false);
-      setShowRecenterButton(false);
       stopWatchingPosition();
     } finally {
       isCheckingRef.current = false;
     }
   }, [applyLocation, fetchCurrentPosition, startWatchingPosition, stopWatchingPosition, updateStatus]);
+
+  const {
+    isFollowingUser,
+    showRecenterButton,
+    isFollowingUserRef,
+    lastAutoCenteredRef,
+    ignoreNextRegionChangeRef,
+    handleRecenter,
+    handleRegionChangeComplete,
+  } = useMapCamera({
+    currentLocation,
+    locationStatus,
+    mapRef,
+    onRetry: checkLocation,
+  });
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -263,64 +266,6 @@ const MapTop: React.FC = () => {
       routeOverlay.plans.find((plan) => plan.id === routeOverlay.activePlanId) ?? null
     );
   }, [routeOverlay]);
-
-  const handleRecenter = useCallback(() => {
-    if (!currentLocation || !mapRef.current) {
-      checkLocation();
-      return;
-    }
-
-    setIsFollowingUser(true);
-    setShowRecenterButton(false);
-    const center = {
-      latitude: currentLocation.latitude,
-      longitude: currentLocation.longitude,
-    };
-    ignoreNextRegionChangeRef.current = true;
-    lastAutoCenteredRef.current = center;
-    mapRef.current.animateCamera({ center }, { duration: 600 });
-  }, [checkLocation, currentLocation]);
-
-  const handleRegionChangeComplete = useCallback(
-    (region: Region) => {
-      if (!isFollowingUser) {
-        return;
-      }
-
-      if (ignoreNextRegionChangeRef.current) {
-        ignoreNextRegionChangeRef.current = false;
-        return;
-      }
-
-      const lastCenter = lastAutoCenteredRef.current;
-      if (!lastCenter) {
-        return;
-      }
-
-      const distance = Math.hypot(
-        region.latitude - lastCenter.latitude,
-        region.longitude - lastCenter.longitude
-      );
-
-      const THRESHOLD = 0.001;
-
-      if (distance > THRESHOLD) {
-        setIsFollowingUser(false);
-        setShowRecenterButton(true);
-      }
-    },
-    [isFollowingUser]
-  );
-
-  useEffect(() => {
-    isFollowingUserRef.current = isFollowingUser;
-  }, [isFollowingUser]);
-
-  useEffect(() => {
-    if (locationStatus !== "granted") {
-      setShowRecenterButton(false);
-    }
-  }, [locationStatus]);
 
   return (
     <View style={styles.container}>
