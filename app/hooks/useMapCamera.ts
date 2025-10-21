@@ -91,6 +91,13 @@ export const useMapCamera = ({
     isFollowingUserRef.current = isFollowingUser;
   }, [isFollowingUser]);
 
+  // currentLocationが取得できた時点でlastAutoCenteredRefを初期化
+  useEffect(() => {
+    if (currentLocation && !lastAutoCenteredRef.current) {
+      lastAutoCenteredRef.current = currentLocation;
+    }
+  }, [currentLocation]);
+
   // locationStatusが"granted"でない場合はボタンを非表示
   useEffect(() => {
     if (locationStatus !== "granted") {

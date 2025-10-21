@@ -18,7 +18,6 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import WeatherWidget from "../components/weather/WeatherWidget";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Location from "expo-location";
 import { mapsConfig } from "../../config/maps";
 import type {
   LatLng,
@@ -31,6 +30,7 @@ import { SAMPLE_ROUTE_PLAN } from "../data/sampleRoutes";
 import { LocationBanner } from "../components/map/LocationBanner";
 import { RecenterButton } from "../components/map/RecenterButton";
 import { useMapCamera } from "../hooks/useMapCamera";
+import { useLocation } from "../hooks/useLocation";
 
 // 検索バー風ヘッダー
 type MapHeaderProps = {
@@ -55,10 +55,6 @@ const MapHeader: React.FC<MapHeaderProps> = ({ topInset }) => {
 // マップを表示する関数コンポーネント
 const MapTop: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const [locationStatus, setLocationStatus] = useState<LocationStatus>("loading");
-  const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
-  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
-  const [lastError, setLastError] = useState<string | null>(null);
   const [routeOverlay, setRouteOverlay] = useState<MapRouteOverlayState>({
     plans: [],
     activePlanId: null,
@@ -66,130 +62,16 @@ const MapTop: React.FC = () => {
   });
   const mapRef = useRef<MapView | null>(null);
 
-  const isMountedRef = useRef(true);
-  const isCheckingRef = useRef(false);
+  // useLocationを先に呼び出す（位置情報を取得）
+  const {
+    locationStatus,
+    currentLocation,
+    fallbackReason,
+    lastError: _lastError,
+    checkLocation,
+  } = useLocation();
 
-  const applyLocation = useCallback((location: LatLng | null) => {
-    if (!isMountedRef.current) return;
-    setCurrentLocation(location);
-  }, []);
-
-  const updateStatus = useCallback((status: LocationStatus, reason?: string | null) => {
-    if (!isMountedRef.current) return;
-    setLocationStatus(status);
-    setFallbackReason(reason ?? null);
-  }, []);
-
-  const fetchCurrentPosition = useCallback(async () => {
-    try {
-      const lastKnown = await Location.getLastKnownPositionAsync({maxAge: 30_000});
-      const position =
-        lastKnown ??
-        (await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        }));
-
-      if (!position) {
-        updateStatus("fallback", "position-unavailable");
-        return;
-      }
-
-      applyLocation({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-      updateStatus("granted");
-      if (isMountedRef.current) setLastError(null);
-    } catch (error) {
-      if (isMountedRef.current) {
-        setLastError((error as Error)?.message ?? String(error));
-      }
-      updateStatus("fallback", "position-error");
-    }
-  }, [applyLocation, updateStatus]);
-
-  const watchSubscriptionRef = useRef<Location.LocationSubscription | null>(null);
-
-  const stopWatchingPosition = useCallback(() => {
-    watchSubscriptionRef.current?.remove();
-    watchSubscriptionRef.current = null;
-  }, []);
-
-  const startWatchingPosition = useCallback(async () => {
-    if (!isMountedRef.current) return;
-    stopWatchingPosition();
-
-    watchSubscriptionRef.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.Balanced,
-        distanceInterval: 15,
-        timeInterval: 1000,
-      },
-      (location) => {
-        if (!isMountedRef.current) return;
-        const coords = location.coords;
-        const center = { latitude: coords.latitude, longitude: coords.longitude };
-        applyLocation(center);
-
-        if (isFollowingUserRef.current && mapRef.current) {
-          ignoreNextRegionChangeRef.current = true;
-          lastAutoCenteredRef.current = center;
-          mapRef.current.animateCamera({ center }, { duration: 600 });
-        }
-      }
-    );
-  }, [applyLocation, stopWatchingPosition]);
-
-  const checkLocation = useCallback(async () => {
-    if (isCheckingRef.current) return;
-    isCheckingRef.current = true;
-    updateStatus("loading");
-
-    try {
-      const servicesEnabled = await Location.hasServicesEnabledAsync();
-      if (!servicesEnabled) {
-        updateStatus("fallback", "services-disabled");
-        applyLocation(null);
-        stopWatchingPosition();
-        return;
-      }
-
-      const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
-
-      if (status === Location.PermissionStatus.GRANTED) {
-        await fetchCurrentPosition();
-        await startWatchingPosition();
-        return;
-      }
-
-      if (canAskAgain) {
-        const requestResult = await Location.requestForegroundPermissionsAsync();
-        if (requestResult.status === Location.PermissionStatus.GRANTED) {
-          await fetchCurrentPosition();
-          await startWatchingPosition();
-          return;
-        }
-        updateStatus("denied", "permission-denied");
-        applyLocation(null);
-        stopWatchingPosition();
-        return;
-      }
-
-      updateStatus("fallback", "permission-blocked");
-      applyLocation(null);
-      stopWatchingPosition();
-    } catch (error) {
-      if (isMountedRef.current) {
-        setLastError((error as Error)?.message ?? String(error));
-      }
-      updateStatus("fallback", "unknown-error");
-      applyLocation(null);
-      stopWatchingPosition();
-    } finally {
-      isCheckingRef.current = false;
-    }
-  }, [applyLocation, fetchCurrentPosition, startWatchingPosition, stopWatchingPosition, updateStatus]);
-
+  // useMapCameraを呼び出す（useLocationから取得した値を渡す）
   const {
     isFollowingUser,
     showRecenterButton,
@@ -206,16 +88,6 @@ const MapTop: React.FC = () => {
   });
 
   useEffect(() => {
-    isMountedRef.current = true;
-    checkLocation();
-
-    return () => {
-      isMountedRef.current = false;
-      stopWatchingPosition();
-    };
-  }, [checkLocation, stopWatchingPosition]);
-
-  useEffect(() => {
     if (__DEV__) {
       setRouteOverlay({
         plans: [SAMPLE_ROUTE_PLAN],
@@ -224,18 +96,6 @@ const MapTop: React.FC = () => {
       });
     }
   }, []);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active") {
-        checkLocation();
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [checkLocation]);
 
   const resolvedCenter =
     locationStatus === "granted" && currentLocation

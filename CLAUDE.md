@@ -27,10 +27,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - 状態: `loading | granted | denied | fallback` + フォールバック理由
   - `watchPositionAsync`による継続的な位置更新
   - ユーザー操作検知による追従解除＋「現在地」ボタン表示
-- **ルート描画**: `app/types/routes.ts`で型定義済み
-  - `RoutePlan`, `RouteSpot`, `RoutePolyline`型
-  - `MapRouteOverlayState`で複数プラン・アクティブプラン・フォーカススポットを管理
-  - 開発環境ではサンプルルート（皇居周辺）を表示
+- **モジュール構成** (リファクタリング済み):
+  - `app/types/routes.ts`: ルート関連の型定義（`RoutePlan`, `RouteSpot`, `RoutePolyline`, `MapRouteOverlayState`）
+  - `app/constants/map.ts`: 地図関連定数（`TOKYO_REGION`等）
+  - `app/data/sample-routes.ts`: 開発用サンプルデータ（皇居周辺ルート）
+  - `app/components/maps/LocationBanner.tsx`: 位置情報状態表示バナー
+  - `app/components/maps/RecenterButton.tsx`: 現在地復帰ボタン
+- **ルート描画**: 複数プラン・アクティブプラン・フォーカススポット管理に対応
 
 ### 設定管理
 - **config/env.ts**: 環境変数の型安全なアクセスと検証関数
@@ -59,16 +62,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 技術スタック
 
 ### 確定技術
-- **フロントエンド**: React Native (v0.79.2) + Expo (v53.0.9) + TypeScript
+- **フロントエンド**: React Native (v0.79.2) + Expo (v54.0.10) + TypeScript (v5.8.3)
 - **UIライブラリ**: React Native Paper (v5.14.5)
 - **地図機能**: React Native Maps (v1.20.1) + Google Maps API
 - **位置情報**: Expo Location (v18.1.5)
 - **ナビゲーション**: React Navigation v7 (Bottom Tabs + Stack)
+- **状態管理**: TanStack React Query (v5.76.1)
+- **HTTPクライアント**: Axios (v1.10.0)
 - **バックエンド**: Node.js + Express + Supabase (v2.49.7)
 - **データベース**: Supabase
-
-### 検討中技術
-- **状態管理**: TanStack React Query（使用可否検討中）
 
 ## 開発コマンド
 
@@ -100,6 +102,15 @@ npm run lint:fix        # ESLint自動修正
 
 # 依存関係
 npm install             # パッケージインストール
+```
+
+### 並行開発（フロントエンド＋バックエンド）
+```bash
+# ターミナル1: フロントエンド
+npm start
+
+# ターミナル2: バックエンド
+cd server && npm run dev
 ```
 
 ### 開発フロー（Conventional Commits準拠）
@@ -139,6 +150,9 @@ npm run lint --prefix server  # バックエンド
 ## コーディング規約
 
 ### 基本原則
+- **命令遵守の徹底**: 指定された要件や制約から逸脱せず、明示的に指示された内容のみを実装
+- **実装範囲の限定**: 要求されていない機能や拡張は一切追加しない
+- **確認の徹底**: 不明な点がある場合は、推測で実装せずに必ず確認を求める
 - TypeScriptの厳密な型定義を使用
 - 関数コンポーネントとHooksを使用
 - React Native Paperコンポーネントを優先使用
@@ -151,6 +165,31 @@ npm run lint --prefix server  # バックエンド
 - Platform.OSでプラットフォーム固有処理を分岐
 - `react-native-maps` + `PROVIDER_GOOGLE`を使用
 - `useSafeAreaInsets()`でSafe Area対応
+- **コンポーネント作成パターン**:
+  ```typescript
+  import React from "react";
+  import { View, StyleSheet } from "react-native";
+  import { Text } from "react-native-paper";
+
+  interface ComponentProps {
+    title: string;
+  }
+
+  export const Component: React.FC<ComponentProps> = ({ title }) => {
+    return (
+      <View style={styles.container}>
+        <Text variant="headlineMedium">{title}</Text>
+      </View>
+    );
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+    },
+  });
+  ```
 
 ### 位置情報処理パターン
 `app/screens/map-top.tsx`を参照パターンとする：
@@ -161,10 +200,25 @@ npm run lint --prefix server  # バックエンド
 - `AppState`監視で復帰時に権限再チェック
 - アンマウント時は必ず`watchSubscription.remove()`でクリーンアップ
 
-### データ管理
+### データ管理・状態管理
 - `config/supabase.ts`経由でSupabaseアクセス
 - `config/env.ts`で環境変数を型安全に取得
-- 状態管理方法は要検討（React Query導入可否含む）
+- **React Query**: サーバーステートの管理に使用
+  ```typescript
+  // カスタムフックパターン
+  export const useLocations = () => {
+    return useQuery({
+      queryKey: ["locations"],
+      queryFn: async () => {
+        const { data, error } = await supabase.from("locations").select("*");
+        if (error) throw error;
+        return data;
+      },
+    });
+  };
+  ```
+- **ローカルステート**: `useState`/`useReducer`で管理
+- **グローバルステート**: 必要に応じてContext APIを使用
 
 ## 開発支援ツール（Spec Kit）
 
@@ -190,5 +244,12 @@ npm run lint --prefix server  # バックエンド
 
 ### プロジェクト構造
 - ディレクトリ構造は機能実装時に動的に作成する方針
-- `app/`配下は機能別ディレクトリ（components, screens, types, hooks等）
+- **実装済み**: `app/`配下の機能別ディレクトリ
+  - `components/`: 再利用可能なコンポーネント（`maps/`, `weather/`等）
+  - `screens/`: 画面コンポーネント（`map-top.tsx`等）
+  - `types/`: TypeScript型定義（`routes.ts`, `weather.ts`等）
+  - `constants/`: 定数定義（`map.ts`等）
+  - `data/`: サンプルデータ（`sample-routes.ts`等）
+  - `hooks/`: カスタムフック
 - サーバー側は未実装のため、必要に応じて`server/src/`配下を構築
+- 関連ファイルのグループ化を優先（機能ごとにディレクトリを作成）
