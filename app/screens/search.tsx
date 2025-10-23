@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useFonts } from 'expo-font';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 
+type SearchScreenProp = StackNavigationProp<RootStackParamList, 'Search'>;
+
 export default function Search() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<SearchScreenProp>();
 
   const [fontsLoaded] = useFonts({
     ZenMaruGothic: require('../../assets/fonts/ZenMaruGothic-Regular.ttf'),
@@ -31,13 +34,15 @@ export default function Search() {
   const recMax = 3;
   const emptyCount = recMax - recommendations.length;
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, backgroundColor: '#fff' }} />;
+  }
 
   return (
     <ScrollView style={styles.container} scrollEnabled={false}>
       <TouchableOpacity
         style={styles.closeButton}
-        onPress={() => navigation.navigate('Main', { screen: 'Map' })}
+        onPress={() => navigation.goBack()}
       >
         <Text style={styles.closeText}>×</Text>
       </TouchableOpacity>
@@ -148,23 +153,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '90%',
   },
-  /*label: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
-    fontFamily: 'ZenMaruGothicMedium',
-  },
-  input: {
-    backgroundColor: '#FFE278',
-    padding: 10,
-    borderRadius: 25,
-    fontSize: 16,
-    color: 'black',
-    borderWidth: 1.5,
-    borderColor: '#C0A647',
-    fontFamily: 'ZenMaruGothic',
-  },*/
   historyTitle: {
     fontSize: 18,
     fontWeight: 'bold',

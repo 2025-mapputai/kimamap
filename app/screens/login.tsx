@@ -1,108 +1,203 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import {View,Text,TouchableOpacity,StyleSheet,ScrollView,Image,ActivityIndicator,Platform,} from 'react-native';
 import { useFonts } from 'expo-font';
-import Icon from "react-native-vector-icons/FontAwesome5";
+import Icon from 'react-native-vector-icons/FontAwesome5';
+import * as Google from 'expo-auth-session/providers/google';
+import { supabase } from '../../config/supabaseClient';
+import { env } from '../../config/env';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../App';
+import { makeRedirectUri } from 'expo-auth-session';
 
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
-export default function App() {
+export default function LoginScreen() {
+  const navigation = useNavigation<LoginScreenNavigationProp>();
+
   const [fontsLoaded] = useFonts({
     ZenMaruGothic: require('../../assets/fonts/ZenMaruGothic-Regular.ttf'),
     ZenMaruGothicBold: require('../../assets/fonts/ZenMaruGothic-Bold.ttf'),
     ZenMaruGothicMedium: require('../../assets/fonts/ZenMaruGothic-Medium.ttf'),
   });
 
+  const isDev = env.app.environment === 'development';
+  const expoAuthUrl = 'https://auth.expo.io/@talisman/kimamap';
+  const redirectUri = isDev
+    ? expoAuthUrl
+    : makeRedirectUri({ scheme: 'kimamap' });
+
+  console.log('Google env config:', env.googleAuth);
+  console.log('redirectUri (isDev=' + isDev + '):', redirectUri);
+
+  // Google OAuth 設定
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: isDev ? env.googleAuth.webClientId : undefined,
+    iosClientId: !isDev ? env.googleAuth.iosClientId : undefined,
+    androidClientId: !isDev ? env.googleAuth.androidClientId : undefined,
+    webClientId: env.googleAuth.webClientId,
+    redirectUri,
+    responseType: 'id_token',
+    scopes: ['openid', 'profile', 'email'],
+  });
+
+  // すでにログイン済みか確認
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        console.log('✅ すでにログイン済み:', data.session.user.email);
+        setTimeout(() => navigation.replace('Main', { screen: 'Map' }), 500);
+      }
+    };
+    checkSession();
+  }, []);
+
+  // Googleログイン後の処理
+  useEffect(() => {
+    console.log('▶ response changed:', response);
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      console.log('✅ Google auth response:', response);
+      console.log('✅ Access Token:', authentication?.accessToken);
+      console.log('✅ ID Token:', authentication?.idToken);
+
+      // Supabase ログイン
+      supabase.auth
+        .signInWithIdToken({
+          provider: 'google',
+          token: authentication?.idToken ?? '',
+        })
+        .then((res) => console.log('Supabase signIn result:', res))
+        .catch((err) => console.error('Supabase signIn error:', err));
+    }
+  }, [response]);
+
+  // スタートボタン
+  const handleStart = async () => {
+  if (!request) {
+    console.warn("Google OAuth request is not ready.");
+    return;
+  }
+
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    navigation.replace("Main", { screen: "Map" });
+    return;
+  }
+
+  try {
+    const result = await promptAsync({ useProxy: true } as any);
+    console.log("promptAsync result:", result);
+  } catch (e) {
+    console.error("promptAsync error", e);
+  }
+};
+
   if (!fontsLoaded) {
-    return null; // フォント読み込み中は何も表示しない
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#FFFBEC',
+        }}
+      >
+        <ActivityIndicator size="large" color="#F8D762" />
+      </View>
+    );
   }
 
   return (
     <ScrollView style={styles.container}>
-        <Text style={styles.title}>「おでかけ、AIにまかせてみない？」</Text>
-        <Text style={styles.label}>気分・場所・移動手段を選ぶだけで、{'\n'}AIがルート付きおでかけプランを自動で提案！ {'\n'}
-                                    「どこ行こう？」を、ワクワクに変えるアプリです☆</Text>
+      <Text style={styles.title}>「おでかけ、AIにまかせてみない？」</Text>
+      <Text style={styles.label}>
+        気分・場所・移動手段・空き時間を選ぶだけで、{'\n'}AIがおでかけプランを自動で提案！ {'\n'}
+        「どこ行こう？」を、ワクワクに変えるアプリです☆
+      </Text>
 
-        <TouchableOpacity style={styles.Button1}>
-                <Text style={styles.buttonText}>今すぐプランをつくってみる ＞</Text>
+      <TouchableOpacity style={styles.Button1} onPress={handleStart} disabled={!request}>
+        <Text style={styles.buttonText}>今すぐプランをつくってみる ＞</Text>
+      </TouchableOpacity>
+
+      <View style={{ alignItems: 'center', marginTop: 20 }}>
+        <Image source={require('../../assets/images/kimamapicon.png')} style={{ width: 150, height: 150 }} resizeMode="contain" />
+      </View>
+
+      <Text style={styles.title}>AIがあなたのおでかけをもっと楽しく</Text>
+      <Text style={styles.labelcenter}>
+        気ままっぷは、あなたの気分や条件に合わせて{'\n'}最適なプランを提案します。
+      </Text>
+
+      <View style={styles.card}>
+        <Icon name="brain" size={30} color="#000" />
+        <Text style={styles.cardTitle}>AIでカンタン！あなただけのオリジナルプラン</Text>
+        <Text style={styles.cardText}>
+          気分や条件に応じて、AIがぴったりのスポットを選定！{'\n'}
+          あなただけの特別なプランを作成します。
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Icon name="map-signs" size={30} color="#000" />
+        <Text style={styles.cardTitle}>地図と一緒にルート表示で迷わない！</Text>
+        <Text style={styles.cardText}>
+          スポット情報も地図上でチェックできます。{'\n'}
+          最適なルートで効率よくおでかけできます。
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Icon name="heart" size={30} color="black" />
+        <Text style={styles.cardTitle}>お気に入り＆履歴保存で何度でも楽しめる！</Text>
+        <Text style={styles.cardText}>
+          過去のルートやお店も保存できます📖{'\n'}
+          いつでも思い出を振り返ることができます。
+        </Text>
+      </View>
+
+      <Text style={styles.title}>簡単操作で、すぐにプランが完成</Text>
+      <Text style={styles.labelcenter}>
+        気分、場所、時間を選ぶだけ。AIがあなたにぴったりの{'\n'}
+        プランを提案します。修正も簡単、保存もワンタップ。
+      </Text>
+
+      <Text style={styles.stepLine}><Text style={styles.numberHighlight}>①</Text> 気分と条件を入力</Text>
+      <Text style={styles.stepLine}><Text style={styles.numberHighlight}>②</Text> AIがプランを提案</Text>
+      <Text style={styles.stepLine}><Text style={styles.numberHighlight}>③</Text> 地図でルートを確認</Text>
+      <Text style={styles.stepLine}><Text style={styles.numberHighlight}>④</Text> お気に入りに保存{'\n'}</Text>
+
+      <Text style={styles.title}>簡単ログインで、すぐに始められる</Text>
+      <Text style={styles.labelgoogle}>
+        面倒な登録手続きは不要。Googleアカウントですぐに{'\n'}ログインできます。
+      </Text>
+
+      <View style={{ alignItems: 'center', marginTop: 10 }}>
+        <TouchableOpacity onPress={handleStart} disabled={!request} accessibilityLabel="Googleログイン">
+          <Image source={require('../../assets/images/Google_logo.png')} style={{ width: 220, height: 80 }} resizeMode="contain" />
         </TouchableOpacity>
+      </View>
 
-        <View style={{ alignItems: 'center', marginTop: 20 }}>
-            <Image source={require('../../assets/images/kimamapicon.png')}/>
-        </View>
+      <Text style={styles.google}>
+        ログインすることで、利用規約とプライバシーポリシーに{'\n'}同意したことになります。
+      </Text>
 
-        <Text style={styles.title}>AIがあなたのおでかけをもっと楽しく</Text>
-        <Text style={styles.labelcenter}>気ままっぷは、あなたの気分や条件に合わせて{'\n'}最適なプランを提案します。 </Text>
-
-        <View style={styles.card}>
-          <Icon name="brain" size={30} color="#000" />
-          <Text style={styles.cardTitle}>AIでカンタン！あなただけのオリジナルプラン</Text>
-          <Text style={styles.cardText}>
-            気分や条件に応じて、AIがぴったりのスポットを選定！{'\n'}
-            あなただけの特別なプランを作成します。
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Icon name="map-signs" size={30} color="#000" />
-          <Text style={styles.cardTitle}>地図と一緒にルート表示で迷わない！</Text>
-          <Text style={styles.cardText}>
-            スポット情報も地図上でチェックできます。{'\n'}
-            最適なルートで効率よくおでかけできます。
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Icon name="heart" size={30} color="black" />
-          <Text style={styles.cardTitle}>お気に入り＆履歴保存で何度でも楽しめる！</Text>
-          <Text style={styles.cardText}>
-            過去のルートやお店も保存できます📖{'\n'}
-            いつでも思い出を振り返ることができます。
-          </Text>
-        </View>
-
-        <Text style={styles.title}>簡単操作で、すぐにプランが完成</Text>
-        <Text style={styles.labelcenter}>気分、場所、時間を選ぶだけ。AIがあなたにぴったりの{'\n'}
-          プランを提案します。修正も簡単、保存もワンタップ。</Text>
-
-        <Text style={styles.stepLine}>
-          <Text style={styles.numberHighlight}>①</Text> 気分と条件を入力
+      <View style={styles.orangeBox}>
+        <Text style={styles.orangeTitle}>さあ、新しいお出かけ体験を{'\n'}始めよう</Text>
+        <Text style={styles.orangeText}>
+          AIがあなたの「どこ行こう？」をワクワクに変えます。{'\n'}今すぐ試してみませんか？
         </Text>
-        <Text style={styles.stepLine}>
-          <Text style={styles.numberHighlight}>②</Text> AIがプランを提案
-        </Text>
-        <Text style={styles.stepLine}>
-          <Text style={styles.numberHighlight}>③</Text> 地図でルートを確認
-        </Text>
-        <Text style={styles.stepLine}>
-          <Text style={styles.numberHighlight}>④</Text> お気に入りに保存{'\n'}
-        </Text>
+        <TouchableOpacity style={styles.Button2} onPress={handleStart} disabled={!request}>
+          <Text style={styles.buttonText2}>今すぐプランをつくってみる ＞</Text>
+        </TouchableOpacity>
+      </View>
 
-        <Text style={styles.title}>簡単ログインで、すぐに始められる</Text>
-        <Text style={styles.labelgoogle}>面倒な登録手続きは不要。Googleアカウントですぐに{'\n'}ログインできます。</Text>
-
-        <View style={{ alignItems: 'center', marginTop: 10 }}>
-            <Image source={require('../../assets/images/Google_logo.png')}/>
-        </View>
-
-        <Text style={styles.google}>ログインすることで、利用規約とプライバシーポリシーに{'\n'}同意したことになります。</Text>
-        
-        <View style={styles.orangeBox}>
-          <Text style={styles.orangeTitle}>さあ、新しいお出かけ体験を{'\n'}始めよう</Text>
-          <Text style={styles.orangeText}>
-            AIがあなたの「どこ行こう？」をワクワクに変えます。{'\n'}今すぐ試してみませんか？
-          </Text>
-          <TouchableOpacity style={styles.Button2}>
-            <Text style={styles.buttonText2}>今すぐプランをつくってみる ＞</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.team}>まっぷ隊 ＠2025</Text>
-
-        <Text style={styles.text}>利用契約　プライバシーポリシー　お問い合わせ{'\n'}</Text>
-
+      <Text style={styles.team}>まっぷ隊 ＠2025</Text>
+      <Text style={styles.text}>利用契約　プライバシーポリシー　お問い合わせ{'\n'}</Text>
     </ScrollView>
   );
 }
-
 
 const styles = StyleSheet.create({
     container: {
@@ -112,7 +207,7 @@ const styles = StyleSheet.create({
     },
     title: {  // タイトルのスタイル
         fontSize: 20,
-        marginTop: 10,
+        marginTop: 80,
         textAlign: 'center',
         fontFamily: 'ZenMaruGothicBold',
     },

@@ -11,9 +11,16 @@ export const env = {
     apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "",
   },
 
+  // Google OAuth 設定
+  googleAuth: {
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "",
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "",
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || "",
+  },
+
   // API エンドポイント
   api: {
-    baseUrl: process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000",
+    baseUrl: process.env.EXPO_PUBLIC_API_URL || "https://localhost:8081",
   },
 
   // アプリ設定
@@ -30,6 +37,9 @@ export const validateEnv = (): void => {
     "EXPO_PUBLIC_SUPABASE_URL",
     "EXPO_PUBLIC_SUPABASE_ANON_KEY",
     "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY",
+    "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID",
+    "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
+    "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID",
   ];
 
   const missingVars = requiredVars.filter((varName) => !process.env[varName]);

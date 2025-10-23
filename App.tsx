@@ -6,18 +6,25 @@ import MapTop from "./app/screens/map-top";
 import Search from "./app/screens/search";
 import { View, Text, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import Login from "./app/screens/login";
+import LogoutConfirm from "./app/screens/profile/LogoutConfirm";
+import AuthLoading from "./app/screens/AuthLoading";
+import MyPage from "./app/screens/profile/MyPage";
 
 export type MainTabParamList = {
   Map: undefined;
   Dummy1: undefined;
-  Dummy2: undefined;
+  MyPage: undefined;
 };
 
 export type RootStackParamList = {
+  Root: undefined; // AuthLoading
   Main: {
     screen: keyof MainTabParamList;
   };
   Search: undefined;
+  LogoutConfirm: undefined;
+  Login: undefined;   
 };
 
 // 仮の2つの画面コンポーネント
@@ -39,13 +46,12 @@ const TAB_COLOR = "#F8D762";
 const ICONS = {
   Map: "map",
   Dummy1: "bookmark",
-  Dummy2: "user",
+  MyPage: "user",
 };
 
 const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
-      // MapのみheaderShown: false、他はtrue
       headerShown: route.name !== "Map",
       tabBarStyle: {
         backgroundColor: TAB_COLOR,
@@ -95,8 +101,8 @@ const TabNavigator = () => (
       }}
     />
     <Tab.Screen
-      name="Dummy2"
-      component={DummyScreen2}
+      name="MyPage"
+      component={MyPage}
       options={{
         title: "マイページ",
         headerShown: true,
@@ -113,11 +119,15 @@ const App: React.FC = () => {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          ...TransitionPresets.SlideFromRightIOS, // スムーズな遷移アニメーション
+          ...TransitionPresets.SlideFromRightIOS,
         }}
       >
+
+        <Stack.Screen name="Root" component={AuthLoading} />
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="Search" component={Search} />
+        <Stack.Screen name="LogoutConfirm" component={LogoutConfirm} />
+        <Stack.Screen name="Login" component={Login} />
       </Stack.Navigator>
     </NavigationContainer>
   );
