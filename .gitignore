@@ -36,3 +36,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 .serena/
+
+# wireframes
+docs/wireframes/*.png
