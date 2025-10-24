@@ -3,7 +3,8 @@
 **Issue**: #24
 **作成日**: 2025-10-23
 **担当**: @massan02
-**ステータス**: ヒアリング完了 → 実装準備完了
+**ステータス**: 実装中（Step 1完了）
+**最終更新**: 2025-10-24
 
 ---
 
@@ -15,18 +16,24 @@ TypeScript + Expressの最小構成を整え、`POST /api/plans` エンドポイ
 
 ## 🏗️ 実装ステップ（5段階）
 
-### **Step 1: 型定義＋環境設定**
+### **Step 1: 型定義＋環境設定** ✅ 完了
 **目的**: API契約とプロジェクト基盤の確立
+**完了日**: 2025-10-24
 
 **作成ファイル**:
-- `src/types/api.ts` - API型定義
-- `src/config/env.ts` - 環境変数管理
-- `.env` - 環境変数ファイル
+- ✅ `src/types/api.ts` - API型定義 + Zodスキーマ
+- ✅ `src/config/env.ts` - 環境変数管理
+- ✅ `.env` - 環境変数ファイル
+- ✅ `src/index.ts` - 仮エントリーポイント（ビルドテスト用）
+- ✅ `package.json` - zod依存関係追加、joi削除
 
 **成果物の概要**:
-- リクエスト/レスポンスのTypeScript型定義
-- エラーレスポンスの型定義
-- 環境変数の型安全な管理機構
+- ✅ リクエスト/レスポンスのTypeScript型定義（PlanRequest, PlanResponse, Route, Spot, Location）
+- ✅ エラーレスポンスの型定義（ErrorCode: 6種類）
+- ✅ Zodバリデーションスキーマ（座標範囲、duration検証、往復時30分以上検証）
+- ✅ 環境変数の型安全な管理機構（EnvConfig クラス）
+- ✅ .gitignoreに.envを追加
+- ✅ ビルドテスト成功確認
 
 ---
 
@@ -507,3 +514,24 @@ app.listen(PORT, () => {
 - このドキュメントは実装完了まで随時更新します
 - 仕様変更があれば、このドキュメントに記録します
 - 完了条件はissue#24の要件に準拠します
+
+---
+
+## 📅 実装進捗履歴
+
+### 2025-10-24
+**Step 1: 型定義＋環境設定 完了**
+- API型定義（PlanRequest, PlanResponse, Route, Spot, Location, ErrorCode）を実装
+- Zodバリデーションスキーマを実装（座標範囲、duration検証、往復時30分以上検証）
+- 環境変数管理機構を実装（EnvConfig クラス）
+- .env ファイル作成、.gitignore に追加
+- package.json を更新（joi削除、zod追加）
+- ビルドテスト成功確認
+
+**成果物**:
+- `server/src/types/api.ts`
+- `server/src/config/env.ts`
+- `server/.env`
+- `server/src/index.ts` (仮エントリーポイント)
+- `server/package.json` (更新)
+- `.gitignore` (更新)
