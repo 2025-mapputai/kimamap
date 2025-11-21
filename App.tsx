@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
 import MapTop from "./app/screens/map-top";
 import Search from "./app/screens/search";
+import LandingPage from "./app/screens/landing page";
+import Login from "./app/screens/login";
 import { View, Text, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
 
@@ -111,11 +113,14 @@ const App: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        initialRouteName="Landing"
         screenOptions={{
           headerShown: false,
           ...TransitionPresets.SlideFromRightIOS, // スムーズな遷移アニメーション
         }}
       >
+        <Stack.Screen name="Landing" component={LandingPage} />
+        <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="Search" component={Search} />
       </Stack.Navigator>
